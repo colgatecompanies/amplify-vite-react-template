@@ -12,6 +12,18 @@ const schema = a.schema({
       content: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
+
+  Machinery: a
+    .model({
+      name: a.string().required(),
+      description: a.string(),
+      pricePerDay: a.float(),
+      pricePerWeek: a.float(),
+      images: a.string().array(), // Array of image URLs
+      available: a.boolean().default(true),
+      category: a.string(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
