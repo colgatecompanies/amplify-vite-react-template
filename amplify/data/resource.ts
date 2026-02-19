@@ -19,11 +19,36 @@ const schema = a.schema({
       description: a.string(),
       pricePerDay: a.float(),
       pricePerWeek: a.float(),
-      images: a.string().array(), // Array of image URLs
+      pricePerAcre: a.float(),
+      images: a.string().array(),
       available: a.boolean().default(true),
       category: a.string(),
+      listingStatus: a.enum(['PENDING', 'APPROVED', 'REJECTED']),
+      ownerEmail: a.string(),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update', 'delete']),
+      allow.group('admin').to(['create', 'read', 'update', 'delete']),
+      allow.publicApiKey().to(['read']),
+    ]),
+
+  Reservation: a
+    .model({
+      machineryId: a.id().required(),
+      machineryName: a.string().required(),
+      startDate: a.date().required(),
+      endDate: a.date().required(),
+      status: a.enum(['PENDING', 'APPROVED', 'REJECTED']),
+      requesterEmail: a.string().required(),
+      ownerEmail: a.string().required(),
+      notes: a.string(),
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update', 'delete']),
+      allow.authenticated().to(['read', 'update']),
+      allow.group('admin').to(['create', 'read', 'update', 'delete']),
+      allow.publicApiKey().to(['read']),
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
