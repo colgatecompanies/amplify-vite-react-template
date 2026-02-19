@@ -14,6 +14,7 @@ import MyReservationsPage from './pages/MyReservationsPage';
 import OwnerReservationsPage from './pages/OwnerReservationsPage';
 import AdminReservationsPage from './pages/AdminReservationsPage';
 import AuthHeader from './components/AuthHeader';
+import { useRandomBackground } from './hooks/useRandomBackground';
 
 function HomePage() {
   return (
@@ -38,8 +39,11 @@ function HomePage() {
 }
 
 function App() {
+  const bgStyle = useRandomBackground();
+
   return (
     <BrowserRouter>
+      <div className="app-background" style={bgStyle}>
       <AuthHeader />
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -121,6 +125,7 @@ function App() {
           }
         />
       </Routes>
+      </div>
     </BrowserRouter>
   );
 }

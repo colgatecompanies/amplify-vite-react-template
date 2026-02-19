@@ -1,3 +1,12 @@
+/* App-level random background */
+.app-background {
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
 /* Global auth header */
 .auth-header {
   position: fixed;
@@ -53,12 +62,6 @@
   align-items: center;
   justify-content: flex-start;
   padding: 3rem;
-
-  /* Background image settings */
-  background-image: url('/images/home/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
 .content {
