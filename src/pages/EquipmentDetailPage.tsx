@@ -98,7 +98,7 @@ function EquipmentDetailPage() {
 
         {machinery.images && machinery.images.length > 0 && (
           <img
-            src={machinery.images[0]}
+            src={machinery.images[0] ?? undefined}
             alt={machinery.name}
             className="equipment-detail-image"
           />

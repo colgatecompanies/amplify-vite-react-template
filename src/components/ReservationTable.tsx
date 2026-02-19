@@ -6,7 +6,7 @@ interface Reservation {
   requesterEmail: string;
   startDate: string;
   endDate: string;
-  status: string | null;
+  status?: string | null | undefined;
   notes?: string | null;
 }
 

@@ -11,7 +11,7 @@ function MachineryCard({ machinery }: MachineryCardProps) {
     <div className="machinery-card">
       {machinery.images && machinery.images.length > 0 && (
         <img
-          src={machinery.images[0]}
+          src={machinery.images[0] ?? undefined}
           alt={machinery.name}
           className="machinery-image"
         />
