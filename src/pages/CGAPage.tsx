@@ -34,7 +34,6 @@ function CGAPage() {
         <img src="/images/home/cga-logo.png" alt="Colgate Grain & Agronomy, LLC" style={{ maxWidth: '200px', marginBottom: '1rem' }} />
         <p>Contact us for more information on agronomic input pooling and custom grain drying.</p>
 
-        <Link to="/" className="back-link">← Back to Home</Link>
       </div>
     </main>
   );

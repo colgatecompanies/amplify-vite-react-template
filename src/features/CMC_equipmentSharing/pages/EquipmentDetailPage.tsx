@@ -125,7 +125,6 @@ function EquipmentDetailPage() {
       <main className="page-container container">
         <div className="equipment-detail-content">
           <p>Equipment not found.</p>
-          <Link to="/equipment" className="back-link">&larr; Back to Equipment</Link>
         </div>
       </main>
     );
@@ -134,8 +133,6 @@ function EquipmentDetailPage() {
   return (
     <main className="page-container container">
       <div className="equipment-detail-content">
-        <Link to="/equipment" className="back-link">&larr; Back to Equipment</Link>
-
         {imageUrls.length > 0 && (
           <div className="equipment-detail-images">
             {imageUrls.map((url, i) => (

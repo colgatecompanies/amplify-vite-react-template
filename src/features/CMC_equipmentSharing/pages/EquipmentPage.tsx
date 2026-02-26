@@ -219,7 +219,6 @@ function EquipmentPage() {
           </div>
         )}
 
-        <Link to="/cmc" className="back-link">← Back to CMC</Link>
       </div>
     </main>
   );

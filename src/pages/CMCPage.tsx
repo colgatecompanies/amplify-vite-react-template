@@ -33,7 +33,6 @@ function CMCPage() {
         <p>Contact us for more information on machinery pooling and custom farming operations.</p>
 
         <Link to="/equipment" className="equipment-link">View Available Equipment →</Link>
-        <Link to="/" className="back-link">← Back to Home</Link>
       </div>
     </main>
   );
