@@ -4,6 +4,7 @@ import { generateClient } from 'aws-amplify/data';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import type { Schema } from '../../amplify/data/resource';
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { resolveImageUrl, downloadImage } from '../utils/storageUtils';
 import '../App.css';
 
 const client = generateClient<Schema>();
@@ -147,9 +148,9 @@ function DashboardPage() {
                       )}
                     </td>
                     <td>{item.category || '—'}</td>
-                    <td>{item.pricePerDay ? `$${item.pricePerDay}` : '—'}</td>
-                    <td>{item.pricePerWeek ? `$${item.pricePerWeek}` : '—'}</td>
-                    <td>{item.pricePerAcre ? `$${item.pricePerAcre}/ac` : '—'}</td>
+                    <td>{item.pricePerDay ? `$${Math.round(item.pricePerDay * 100) / 100}` : '—'}</td>
+                    <td>{item.pricePerWeek ? `$${Math.round(item.pricePerWeek * 100) / 100}` : '—'}</td>
+                    <td>{item.pricePerAcre ? `$${Math.round(item.pricePerAcre * 100) / 100}/ac` : '—'}</td>
                     <td>
                       <span className={statusClass(item.listingStatus)}>
                         {statusLabel(item.listingStatus)}
@@ -166,6 +167,45 @@ function DashboardPage() {
                       >
                         {deletingId === item.id ? '...' : 'Delete'}
                       </button>
+                      {item.images && item.images.filter(Boolean).length > 0 && (
+                        <button
+                          className="image-download-btn"
+                          onClick={async () => {
+                            const imgs = item.images!.filter((img): img is string => !!img);
+                            for (const key of imgs) {
+                              const url = await resolveImageUrl(key);
+                              const parts = key.split('/');
+                              const filename = parts[parts.length - 1] || 'equipment-image.jpg';
+                              await downloadImage(url, filename);
+                            }
+                          }}
+                        >
+                          Download Images
+                        </button>
+                      )}
+                      {item.listingStatus === 'APPROVED' && (
+                        <button
+                          className="share-facebook-button"
+                          onClick={async () => {
+                            const url = `https://colgatecompanies.com/equipment/${item.id}`;
+                            const prices: string[] = [];
+                            if (item.pricePerDay) prices.push(`$${Math.round(item.pricePerDay * 100) / 100}/day`);
+                            if (item.pricePerWeek) prices.push(`$${Math.round(item.pricePerWeek * 100) / 100}/week`);
+                            if (item.pricePerAcre) prices.push(`$${Math.round(item.pricePerAcre * 100) / 100}/ac`);
+                            const priceStr = prices.length > 0 ? ` (${prices.join(', ')})` : '';
+                            const text = `${item.name}${priceStr}\n\n${item.description || ''}\n\nView details & check availability:\n${url}`;
+                            try {
+                              await navigator.clipboard.writeText(text);
+                              alert('Listing details copied to clipboard! Facebook Marketplace will open — paste the details into your listing description.');
+                            } catch {
+                              prompt('Copy this text for your Marketplace listing:', text);
+                            }
+                            window.open('https://www.facebook.com/marketplace/create/item/', '_blank');
+                          }}
+                        >
+                          Share
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { fetchImageFn } from '../functions/fetch-image/resource';
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -25,6 +26,7 @@ const schema = a.schema({
       category: a.string(),
       listingStatus: a.enum(['PENDING', 'APPROVED', 'REJECTED']),
       ownerEmail: a.string(),
+      zipCode: a.string(),
     })
     .authorization((allow) => [
       allow.owner().to(['create', 'read', 'update', 'delete']),
@@ -49,6 +51,16 @@ const schema = a.schema({
       allow.group('admin').to(['create', 'read', 'update', 'delete']),
       allow.publicApiKey().to(['read']),
     ]),
+
+  fetchImageFromUrl: a
+    .query()
+    .arguments({
+      url: a.string().required(),
+      machineryId: a.string().required(),
+    })
+    .returns(a.string())
+    .handler(a.handler.function(fetchImageFn))
+    .authorization((allow) => [allow.authenticated()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

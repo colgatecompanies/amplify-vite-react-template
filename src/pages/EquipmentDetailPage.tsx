@@ -5,6 +5,7 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import type { Schema } from '../../amplify/data/resource';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import ReservationForm from '../components/ReservationForm';
+import { resolveImageUrl } from '../utils/storageUtils';
 import '../App.css';
 
 const client = generateClient<Schema>();
@@ -20,6 +21,7 @@ function EquipmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   useEffect(() => {
     getCurrentUser()
@@ -32,6 +34,44 @@ function EquipmentDetailPage() {
     fetchEquipment();
     fetchReservations();
   }, [id]);
+
+  useEffect(() => {
+    if (!machinery) return;
+
+    // Resolve S3 image keys to URLs
+    const imgs = machinery.images?.filter((img): img is string => !!img) || [];
+    if (imgs.length > 0) {
+      Promise.all(imgs.map((key) => resolveImageUrl(key))).then(setImageUrls);
+    } else {
+      setImageUrls([]);
+    }
+
+    const prices: string[] = [];
+    if (machinery.pricePerDay) prices.push(`$${Math.round(machinery.pricePerDay * 100) / 100}/day`);
+    if (machinery.pricePerWeek) prices.push(`$${Math.round(machinery.pricePerWeek * 100) / 100}/week`);
+    if (machinery.pricePerAcre) prices.push(`$${Math.round(machinery.pricePerAcre * 100) / 100}/ac`);
+    const priceStr = prices.length > 0 ? ` - ${prices.join(', ')}` : '';
+    const title = `${machinery.name}${priceStr} | Colgate Machinery Company`;
+    const desc = machinery.description || `Rent ${machinery.name} from Colgate Machinery Company.`;
+    document.title = title;
+    const setMeta = (property: string, content: string) => {
+      let el = document.querySelector(`meta[property="${property}"]`);
+      if (el) {
+        el.setAttribute('content', content);
+      } else {
+        el = document.createElement('meta');
+        el.setAttribute('property', property);
+        el.setAttribute('content', content);
+        document.head.appendChild(el);
+      }
+    };
+    setMeta('og:title', title);
+    setMeta('og:description', desc);
+    setMeta('og:url', `https://colgatecompanies.com/equipment/${machinery.id}`);
+    return () => {
+      document.title = 'Colgate Machinery Company - Equipment Rental';
+    };
+  }, [machinery]);
 
   async function fetchEquipment() {
     try {
@@ -96,12 +136,17 @@ function EquipmentDetailPage() {
       <div className="equipment-detail-content">
         <Link to="/equipment" className="back-link">&larr; Back to Equipment</Link>
 
-        {machinery.images && machinery.images.length > 0 && (
-          <img
-            src={machinery.images[0] ?? undefined}
-            alt={machinery.name}
-            className="equipment-detail-image"
-          />
+        {imageUrls.length > 0 && (
+          <div className="equipment-detail-images">
+            {imageUrls.map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                alt={`${machinery.name} - image ${i + 1}`}
+                className="equipment-detail-image"
+              />
+            ))}
+          </div>
         )}
 
         <h1>{machinery.name}</h1>
@@ -118,13 +163,13 @@ function EquipmentDetailPage() {
 
         <div className="equipment-detail-pricing">
           {machinery.pricePerDay != null && machinery.pricePerDay > 0 && (
-            <span className="price">${machinery.pricePerDay}/day</span>
+            <span className="price">${Math.round(machinery.pricePerDay * 100) / 100}/day</span>
           )}
           {machinery.pricePerWeek != null && machinery.pricePerWeek > 0 && (
-            <span className="price">${machinery.pricePerWeek}/week</span>
+            <span className="price">${Math.round(machinery.pricePerWeek * 100) / 100}/week</span>
           )}
           {machinery.pricePerAcre != null && machinery.pricePerAcre > 0 && (
-            <span className="price">${machinery.pricePerAcre}/ac</span>
+            <span className="price">${Math.round(machinery.pricePerAcre * 100) / 100}/ac</span>
           )}
         </div>
 

@@ -6,6 +6,7 @@ import type { Schema } from '../../amplify/data/resource';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { isAdmin } from '../utils/authUtils';
 import { EQUIPMENT_CATEGORIES } from '../constants/categories';
+import ImageUploader from '../components/ImageUploader';
 import '../App.css';
 
 const client = generateClient<Schema>();
@@ -27,9 +28,10 @@ function AdminEquipmentEditPage() {
     pricePerWeek: '',
     pricePerAcre: '',
     category: '',
-    imageUrl: '',
     available: true,
+    zipCode: '',
   });
+  const [images, setImages] = useState<string[]>([]);
 
   const isAdminRoute = location.pathname.startsWith('/admin');
   const backPath = isAdminRoute ? '/admin' : '/dashboard';
@@ -61,9 +63,10 @@ function AdminEquipmentEditPage() {
           pricePerWeek: data.pricePerWeek?.toString() || '',
           pricePerAcre: data.pricePerAcre?.toString() || '',
           category: data.category || '',
-          imageUrl: data.images?.[0] || '',
           available: data.available ?? true,
+          zipCode: data.zipCode || '',
         });
+        setImages(data.images?.filter((img): img is string => !!img) || []);
       } catch (error) {
         console.error('Error fetching machinery:', error);
         setNotFound(true);
@@ -94,21 +97,20 @@ function AdminEquipmentEditPage() {
         description: formData.description,
         category: formData.category,
         available: formData.available,
+        zipCode: formData.zipCode,
       };
 
       if (formData.pricePerDay) {
-        machineryData.pricePerDay = parseFloat(formData.pricePerDay);
+        machineryData.pricePerDay = Math.round(parseFloat(formData.pricePerDay) * 100) / 100;
       }
       if (formData.pricePerWeek) {
-        machineryData.pricePerWeek = parseFloat(formData.pricePerWeek);
+        machineryData.pricePerWeek = Math.round(parseFloat(formData.pricePerWeek) * 100) / 100;
       }
       if (formData.pricePerAcre) {
-        machineryData.pricePerAcre = parseFloat(formData.pricePerAcre);
+        machineryData.pricePerAcre = Math.round(parseFloat(formData.pricePerAcre) * 100) / 100;
       }
 
-      if (formData.imageUrl) {
-        machineryData.images = [formData.imageUrl];
-      }
+      machineryData.images = images;
 
       // Non-admin edits reset listing status so admin can re-approve
       if (!userIsAdmin) {
@@ -260,16 +262,27 @@ function AdminEquipmentEditPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="imageUrl">Image URL</label>
+            <label htmlFor="zipCode">Zip Code (location of equipment) *</label>
             <input
-              type="url"
-              id="imageUrl"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
+              type="text"
+              id="zipCode"
+              name="zipCode"
+              value={formData.zipCode}
+              onChange={e => setFormData(prev => ({ ...prev, zipCode: e.target.value.replace(/\D/g, '').slice(0, 5) }))}
+              required
+              maxLength={5}
+              inputMode="numeric"
+              placeholder="e.g., 58046"
             />
-            <small>Enter a direct link to an image of the equipment</small>
+            <small>5-digit US zip code where the equipment is located</small>
+          </div>
+
+          <div className="form-group">
+            <ImageUploader
+              images={images}
+              machineryId={id!}
+              onChange={setImages}
+            />
           </div>
 
           <div className="form-group checkbox-group">

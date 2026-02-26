@@ -17,6 +17,7 @@ function AdminEquipmentListPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [userIsAdmin, setUserIsAdmin] = useState<boolean | null>(null);
   const [email, setEmail] = useState('');
+  const [migrating, setMigrating] = useState(false);
 
   useEffect(() => {
     isAdmin().then((result) => {
@@ -93,6 +94,33 @@ function AdminEquipmentListPage() {
     }
   }
 
+  async function handleBackfillZipCode() {
+    const toUpdate = machinery.filter(m => !m.zipCode);
+    if (toUpdate.length === 0) {
+      alert('All listings already have a zip code.');
+      return;
+    }
+    if (!confirm(`Set zip code 58046 on ${toUpdate.length} listing(s) that currently have none?`)) {
+      return;
+    }
+    setMigrating(true);
+    let updated = 0;
+    for (const item of toUpdate) {
+      try {
+        await client.models.Machinery.update(
+          { id: item.id, zipCode: '58046' },
+          { authMode: 'userPool' }
+        );
+        updated++;
+      } catch (e) {
+        console.error('Failed to update', item.id, e);
+      }
+    }
+    alert(`Updated ${updated} of ${toUpdate.length} listings with zip code 58046.`);
+    setMigrating(false);
+    fetchMachinery();
+  }
+
   function statusLabel(status: string | null | undefined) {
     switch (status) {
       case 'APPROVED': return 'Approved';
@@ -148,6 +176,20 @@ function AdminEquipmentListPage() {
           <Link to="/admin/reservations" className="equipment-link">Manage Reservations</Link>
         </div>
 
+        {!loading && machinery.some(m => !m.zipCode) && (
+          <div className="info-banner" style={{ marginBottom: '1.5rem' }}>
+            <strong>{machinery.filter(m => !m.zipCode).length}</strong> listing(s) are missing a zip code.{' '}
+            <button
+              className="approve-button"
+              onClick={handleBackfillZipCode}
+              disabled={migrating}
+              style={{ marginLeft: '0.75rem' }}
+            >
+              {migrating ? 'Updating...' : 'Set all to 58046'}
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <p>Loading equipment...</p>
         ) : machinery.length === 0 ? (
@@ -184,9 +226,9 @@ function AdminEquipmentListPage() {
                     </td>
                     <td>{item.ownerEmail || '—'}</td>
                     <td>{item.category || '—'}</td>
-                    <td>{item.pricePerDay ? `$${item.pricePerDay}` : '—'}</td>
-                    <td>{item.pricePerWeek ? `$${item.pricePerWeek}` : '—'}</td>
-                    <td>{item.pricePerAcre ? `$${item.pricePerAcre}/ac` : '—'}</td>
+                    <td>{item.pricePerDay ? `$${Math.round(item.pricePerDay * 100) / 100}` : '—'}</td>
+                    <td>{item.pricePerWeek ? `$${Math.round(item.pricePerWeek * 100) / 100}` : '—'}</td>
+                    <td>{item.pricePerAcre ? `$${Math.round(item.pricePerAcre * 100) / 100}/ac` : '—'}</td>
                     <td>
                       <span className={statusClass(item.listingStatus)}>
                         {statusLabel(item.listingStatus)}
