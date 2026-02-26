@@ -4,17 +4,17 @@ import '@aws-amplify/ui-react/styles.css';
 import './App.css';
 import CGAPage from './pages/CGAPage';
 import CMCPage from './pages/CMCPage';
-import EquipmentPage from './pages/EquipmentPage';
-import AdminPage from './pages/AdminPage';
-import AdminEquipmentListPage from './pages/AdminEquipmentListPage';
-import AdminEquipmentEditPage from './pages/AdminEquipmentEditPage';
-import DashboardPage from './pages/DashboardPage';
-import EquipmentDetailPage from './pages/EquipmentDetailPage';
-import MyReservationsPage from './pages/MyReservationsPage';
-import OwnerReservationsPage from './pages/OwnerReservationsPage';
-import AdminReservationsPage from './pages/AdminReservationsPage';
-import AuthHeader from './components/AuthHeader';
-import { useRandomBackground } from './hooks/useRandomBackground';
+import EquipmentPage from './features/CMC_equipmentSharing/pages/EquipmentPage';
+import AdminPage from './features/CMC_equipmentSharing/pages/AdminPage';
+import AdminEquipmentListPage from './features/CMC_equipmentSharing/pages/AdminEquipmentListPage';
+import AdminEquipmentEditPage from './features/CMC_equipmentSharing/pages/AdminEquipmentEditPage';
+import DashboardPage from './features/CMC_equipmentSharing/pages/DashboardPage';
+import EquipmentDetailPage from './features/CMC_equipmentSharing/pages/EquipmentDetailPage';
+import MyReservationsPage from './features/CMC_equipmentSharing/pages/MyReservationsPage';
+import OwnerReservationsPage from './features/CMC_equipmentSharing/pages/OwnerReservationsPage';
+import AdminReservationsPage from './features/CMC_equipmentSharing/pages/AdminReservationsPage';
+import AuthHeader from './features/shared/components/AuthHeader';
+import { useRandomBackground } from './features/shared/hooks/useRandomBackground';
 
 function HomePage() {
   return (

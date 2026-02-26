@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import { fetchUserAttributes } from 'aws-amplify/auth';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../../amplify/data/resource';
 import AvailabilityCalendar from './AvailabilityCalendar';
-import { datesOverlap, formatDisplayDate } from '../utils/dateUtils';
+import { datesOverlap, formatDisplayDate } from '../../shared/utils/dateUtils';
 
 const client = generateClient<Schema>();
 

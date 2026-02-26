@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Schema } from '../../amplify/data/resource';
-import { resolveImageUrl } from '../utils/storageUtils';
-import { getZipCoords } from '../utils/zipCodeUtils';
+import { Schema } from '../../../../amplify/data/resource';
+import { resolveImageUrl } from '../../shared/utils/storageUtils';
+import { getZipCoords } from '../../shared/utils/zipCodeUtils';
 
 interface MachineryCardProps {
   machinery: Schema['Machinery']['type'];

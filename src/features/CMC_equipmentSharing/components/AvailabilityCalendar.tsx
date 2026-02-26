@@ -5,7 +5,7 @@ import {
   formatDate,
   isDateInRange,
   todayStr,
-} from '../utils/dateUtils';
+} from '../../shared/utils/dateUtils';
 
 interface ReservationSlot {
   startDate: string;

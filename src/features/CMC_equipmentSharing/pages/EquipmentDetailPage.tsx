@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import { getCurrentUser } from 'aws-amplify/auth';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../../amplify/data/resource';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import ReservationForm from '../components/ReservationForm';
-import { resolveImageUrl } from '../utils/storageUtils';
-import '../App.css';
+import { resolveImageUrl } from '../../shared/utils/storageUtils';
+import '../../../App.css';
 
 const client = generateClient<Schema>();
 

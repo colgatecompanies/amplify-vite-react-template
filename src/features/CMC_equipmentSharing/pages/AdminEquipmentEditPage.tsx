@@ -1,20 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import { fetchUserAttributes } from 'aws-amplify/auth';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../../amplify/data/resource';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { isAdmin } from '../utils/authUtils';
+import { isAdmin } from '../../shared/utils/authUtils';
 import { EQUIPMENT_CATEGORIES } from '../constants/categories';
 import ImageUploader from '../components/ImageUploader';
-import '../App.css';
+import '../../../App.css';
 
 const client = generateClient<Schema>();
 
-function AdminPage() {
+function AdminEquipmentEditPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   useAuthenticator((context) => [context.user]);
+  const [email, setEmail] = useState('');
+
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -26,41 +32,71 @@ function AdminPage() {
     zipCode: '',
   });
   const [images, setImages] = useState<string[]>([]);
-  const [tempId] = useState(() => crypto.randomUUID());
-  const [submitting, setSubmitting] = useState(false);
-  const [userIsAdmin, setUserIsAdmin] = useState(false);
-  const [email, setEmail] = useState('');
 
   const isAdminRoute = location.pathname.startsWith('/admin');
   const backPath = isAdminRoute ? '/admin' : '/dashboard';
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
 
   useEffect(() => {
-    isAdmin().then(setUserIsAdmin);
     fetchUserAttributes().then(attrs => {
       setEmail(attrs.email || '');
     });
+    isAdmin().then(setUserIsAdmin);
   }, []);
+
+  useEffect(() => {
+    async function fetchMachinery() {
+      if (!id) return;
+      try {
+        const { data } = await client.models.Machinery.get(
+          { id },
+          { authMode: 'userPool' }
+        );
+        if (!data) {
+          setNotFound(true);
+          return;
+        }
+        setFormData({
+          name: data.name,
+          description: data.description || '',
+          pricePerDay: data.pricePerDay?.toString() || '',
+          pricePerWeek: data.pricePerWeek?.toString() || '',
+          pricePerAcre: data.pricePerAcre?.toString() || '',
+          category: data.category || '',
+          available: data.available ?? true,
+          zipCode: data.zipCode || '',
+        });
+        setImages(data.images?.filter((img): img is string => !!img) || []);
+      } catch (error) {
+        console.error('Error fetching machinery:', error);
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMachinery();
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     setSubmitting(true);
 
     try {
       const machineryData: any = {
+        id,
         name: formData.name,
         description: formData.description,
         category: formData.category,
         available: formData.available,
-        listingStatus: userIsAdmin ? 'APPROVED' : 'PENDING',
-        ownerEmail: email,
         zipCode: formData.zipCode,
       };
 
@@ -74,12 +110,15 @@ function AdminPage() {
         machineryData.pricePerAcre = Math.round(parseFloat(formData.pricePerAcre) * 100) / 100;
       }
 
-      if (images.length > 0) {
-        machineryData.images = images;
+      machineryData.images = images;
+
+      // Non-admin edits reset listing status so admin can re-approve
+      if (!userIsAdmin) {
+        machineryData.listingStatus = 'PENDING';
       }
 
-      const { data, errors } = await client.models.Machinery.create(machineryData, {
-        authMode: 'userPool'
+      const { data, errors } = await client.models.Machinery.update(machineryData, {
+        authMode: 'userPool',
       });
 
       if (errors && errors.length > 0) {
@@ -87,31 +126,37 @@ function AdminPage() {
       }
 
       if (!data) {
-        throw new Error('No data returned from create operation');
+        throw new Error('No data returned from update operation');
       }
 
-      alert(userIsAdmin ? 'Equipment added successfully!' : 'Equipment submitted for review!');
-
-      setFormData({
-        name: '',
-        description: '',
-        pricePerDay: '',
-        pricePerWeek: '',
-        pricePerAcre: '',
-        category: '',
-        available: true,
-        zipCode: '',
-      });
-      setImages([]);
-
+      alert('Equipment updated successfully!');
       navigate(backPath);
     } catch (error) {
-      console.error('Error adding machinery:', error);
-      alert('Error adding equipment. Please try again.');
+      console.error('Error updating machinery:', error);
+      alert('Error updating equipment. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <main className="page-container container">
+        <div className="admin-content"><p>Loading equipment...</p></div>
+      </main>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <main className="page-container container">
+        <div className="admin-content">
+          <p>Equipment not found.</p>
+          <Link to={backPath} className="back-link">Back to Equipment List</Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page-container container">
@@ -119,15 +164,15 @@ function AdminPage() {
         <div className="admin-header">
           <div style={{ textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
             <img src="/images/home/cmc-logo.png" alt="Colgate Machinery Company, LLC" style={{ maxWidth: '120px', marginBottom: '1rem' }} />
-            <h1>Add Equipment</h1>
-            <p>{userIsAdmin ? 'Add new equipment to the rental catalog' : 'Submit equipment for listing'}</p>
+            <h1>Edit Equipment</h1>
+            <p>Update equipment details</p>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as: {email}</p>
           </div>
         </div>
 
         {!userIsAdmin && (
           <div className="info-banner">
-            Your listing will be reviewed by an administrator before appearing publicly.
+            Edits to your listing will be sent for review before appearing on the public page.
           </div>
         )}
 
@@ -235,7 +280,7 @@ function AdminPage() {
           <div className="form-group">
             <ImageUploader
               images={images}
-              machineryId={tempId}
+              machineryId={id!}
               onChange={setImages}
             />
           </div>
@@ -254,7 +299,7 @@ function AdminPage() {
 
           <div className="form-actions">
             <button type="submit" disabled={submitting} className="submit-button">
-              {submitting ? 'Adding...' : 'Add Equipment'}
+              {submitting ? 'Saving...' : 'Save Changes'}
             </button>
             <Link to={backPath} className="cancel-link">Cancel</Link>
           </div>
@@ -266,4 +311,4 @@ function AdminPage() {
   );
 }
 
-export default AdminPage;
+export default AdminEquipmentEditPage;

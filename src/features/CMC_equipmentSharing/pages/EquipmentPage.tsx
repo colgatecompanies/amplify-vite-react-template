@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../../amplify/data/resource';
 import MachineryCard from '../components/MachineryCard';
 import { EQUIPMENT_CATEGORIES } from '../constants/categories';
-import { getZipCoords, haversineDistanceMiles, ZipCoords } from '../utils/zipCodeUtils';
-import '../App.css';
+import { getZipCoords, haversineDistanceMiles, ZipCoords } from '../../shared/utils/zipCodeUtils';
+import '../../../App.css';
 
 const client = generateClient<Schema>();
 

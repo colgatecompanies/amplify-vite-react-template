@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../../amplify/data/resource';
 import {
   uploadEquipmentImage,
   resolveImageUrl,
   removeImage,
   downloadImage,
-} from '../utils/storageUtils';
+} from '../../shared/utils/storageUtils';
 
 const client = generateClient<Schema>();
 

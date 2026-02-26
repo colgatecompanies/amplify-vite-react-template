@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import { fetchUserAttributes } from 'aws-amplify/auth';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../../amplify/data/resource';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import ReservationTable from '../components/ReservationTable';
-import '../App.css';
+import '../../../App.css';
 
 const client = generateClient<Schema>();
 
-function OwnerReservationsPage() {
+function MyReservationsPage() {
   useAuthenticator((context) => [context.user]);
   const [reservations, setReservations] = useState<Array<Schema['Reservation']['type']>>([]);
   const [loading, setLoading] = useState(true);
@@ -23,17 +23,17 @@ function OwnerReservationsPage() {
   }, []);
 
   useEffect(() => {
-    if (email) fetchOwnerReservations();
+    if (email) fetchMyReservations();
   }, [email]);
 
-  async function fetchOwnerReservations() {
+  async function fetchMyReservations() {
     try {
       const { data } = await client.models.Reservation.list({
         authMode: 'userPool',
       });
-      const forMyEquipment = data.filter((r) => r.ownerEmail === email);
-      forMyEquipment.sort((a, b) => a.startDate.localeCompare(b.startDate));
-      setReservations(forMyEquipment);
+      const mine = data.filter((r) => r.requesterEmail === email);
+      mine.sort((a, b) => a.startDate.localeCompare(b.startDate));
+      setReservations(mine);
     } catch (error) {
       console.error('Error fetching reservations:', error);
     } finally {
@@ -41,43 +41,21 @@ function OwnerReservationsPage() {
     }
   }
 
-  async function handleApprove(id: string) {
+  async function handleCancel(id: string) {
+    if (!confirm('Are you sure you want to cancel this reservation request?')) return;
     setUpdatingId(id);
     try {
-      const { errors } = await client.models.Reservation.update(
-        { id, status: 'APPROVED' },
+      const { errors } = await client.models.Reservation.delete(
+        { id },
         { authMode: 'userPool' }
       );
       if (errors?.length) {
         throw new Error(errors.map((e) => e.message).join(', '));
       }
-      setReservations((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: 'APPROVED' as const } : r))
-      );
+      setReservations((prev) => prev.filter((r) => r.id !== id));
     } catch (error) {
-      console.error('Error approving reservation:', error);
-      alert('Error approving reservation. Please try again.');
-    } finally {
-      setUpdatingId(null);
-    }
-  }
-
-  async function handleReject(id: string) {
-    setUpdatingId(id);
-    try {
-      const { errors } = await client.models.Reservation.update(
-        { id, status: 'REJECTED' },
-        { authMode: 'userPool' }
-      );
-      if (errors?.length) {
-        throw new Error(errors.map((e) => e.message).join(', '));
-      }
-      setReservations((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: 'REJECTED' as const } : r))
-      );
-    } catch (error) {
-      console.error('Error rejecting reservation:', error);
-      alert('Error rejecting reservation. Please try again.');
+      console.error('Error cancelling reservation:', error);
+      alert('Error cancelling reservation. Please try again.');
     } finally {
       setUpdatingId(null);
     }
@@ -89,8 +67,8 @@ function OwnerReservationsPage() {
         <div className="admin-header">
           <div style={{ textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
             <img src="/images/home/cmc-logo.png" alt="Colgate Machinery Company, LLC" style={{ maxWidth: '120px', marginBottom: '1rem' }} />
-            <h1>Reservation Requests</h1>
-            <p>Manage reservation requests for your equipment</p>
+            <h1>My Reservations</h1>
+            <p>Track your equipment reservation requests</p>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as: {email}</p>
           </div>
         </div>
@@ -101,9 +79,8 @@ function OwnerReservationsPage() {
           <ReservationTable
             reservations={reservations}
             showEquipmentName
-            showRequester
-            onApprove={handleApprove}
-            onReject={handleReject}
+            showRequester={false}
+            onCancel={handleCancel}
             updatingId={updatingId}
           />
         )}
@@ -114,4 +91,4 @@ function OwnerReservationsPage() {
   );
 }
 
-export default OwnerReservationsPage;
+export default MyReservationsPage;

@@ -2,52 +2,47 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import { fetchUserAttributes } from 'aws-amplify/auth';
-import type { Schema } from '../../amplify/data/resource';
+import type { Schema } from '../../../../amplify/data/resource';
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { resolveImageUrl, downloadImage } from '../utils/storageUtils';
-import '../App.css';
+import { isAdmin } from '../../shared/utils/authUtils';
+import '../../../App.css';
 
 const client = generateClient<Schema>();
 
-function DashboardPage() {
-  const { user } = useAuthenticator((context) => [context.user]);
+function AdminEquipmentListPage() {
+  useAuthenticator((context) => [context.user]);
   const [machinery, setMachinery] = useState<Array<Schema['Machinery']['type']>>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [userIsAdmin, setUserIsAdmin] = useState<boolean | null>(null);
   const [email, setEmail] = useState('');
+  const [migrating, setMigrating] = useState(false);
 
   useEffect(() => {
+    isAdmin().then((result) => {
+      setUserIsAdmin(result);
+    });
     fetchUserAttributes().then(attrs => {
       setEmail(attrs.email || '');
     });
   }, []);
 
   useEffect(() => {
-    if (email) {
-      fetchMyMachinery();
+    if (userIsAdmin !== null) {
+      fetchMachinery();
     }
-  }, [email]);
+  }, [userIsAdmin]);
 
-  async function fetchMyMachinery() {
+  async function fetchMachinery() {
     try {
+      // Admin uses userPool to see ALL records (admin group rule)
+      // apiKey only returns public reads and wouldn't include owner info
       const { data } = await client.models.Machinery.list({
         authMode: 'userPool',
       });
-      // Filter to only show equipment owned by the current user.
-      // Check ownerEmail (explicitly set) and the Amplify owner field
-      // (auto-set by allow.owner() rule). The owner field may be stored
-      // as "sub" or "sub::username", so check for both formats.
-      const userId = user?.userId || '';
-      const myItems = data.filter(item => {
-        const ownerField = (item as any).owner || '';
-        return (
-          item.ownerEmail === email ||
-          ownerField === userId ||
-          ownerField.startsWith(`${userId}::`)
-        );
-      });
-      myItems.sort((a, b) => a.name.localeCompare(b.name));
-      setMachinery(myItems);
+      data.sort((a, b) => a.name.localeCompare(b.name));
+      setMachinery(data);
     } catch (error) {
       console.error('Error fetching machinery:', error);
     } finally {
@@ -78,12 +73,60 @@ function DashboardPage() {
     }
   }
 
+  async function handleStatusChange(id: string, newStatus: 'APPROVED' | 'REJECTED') {
+    setUpdatingId(id);
+    try {
+      const { data, errors } = await client.models.Machinery.update(
+        { id, listingStatus: newStatus },
+        { authMode: 'userPool' }
+      );
+      if (errors?.length) {
+        throw new Error(errors.map(e => e.message).join(', '));
+      }
+      if (data) {
+        setMachinery(prev => prev.map(m => m.id === id ? { ...m, listingStatus: newStatus } : m));
+      }
+    } catch (error) {
+      console.error('Error updating listing status:', error);
+      alert('Error updating status. Please try again.');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function handleBackfillZipCode() {
+    const toUpdate = machinery.filter(m => !m.zipCode);
+    if (toUpdate.length === 0) {
+      alert('All listings already have a zip code.');
+      return;
+    }
+    if (!confirm(`Set zip code 58046 on ${toUpdate.length} listing(s) that currently have none?`)) {
+      return;
+    }
+    setMigrating(true);
+    let updated = 0;
+    for (const item of toUpdate) {
+      try {
+        await client.models.Machinery.update(
+          { id: item.id, zipCode: '58046' },
+          { authMode: 'userPool' }
+        );
+        updated++;
+      } catch (e) {
+        console.error('Failed to update', item.id, e);
+      }
+    }
+    alert(`Updated ${updated} of ${toUpdate.length} listings with zip code 58046.`);
+    setMigrating(false);
+    fetchMachinery();
+  }
+
   function statusLabel(status: string | null | undefined) {
     switch (status) {
       case 'APPROVED': return 'Approved';
       case 'REJECTED': return 'Rejected';
       case 'PENDING':
-      default: return 'Pending Review';
+      default: return 'Pending';
     }
   }
 
@@ -96,29 +139,62 @@ function DashboardPage() {
     }
   }
 
+  if (userIsAdmin === null) {
+    return (
+      <main className="page-container container">
+        <div className="admin-equipment-content"><p>Loading...</p></div>
+      </main>
+    );
+  }
+
+  if (!userIsAdmin) {
+    return (
+      <main className="page-container container">
+        <div className="admin-equipment-content">
+          <h1>Access Denied</h1>
+          <p>You do not have permission to access the admin panel.</p>
+          <Link to="/dashboard" className="back-link">Go to My Dashboard</Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="page-container container">
       <div className="admin-equipment-content">
         <div className="admin-header">
           <div style={{ textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
             <img src="/images/home/cmc-logo.png" alt="Colgate Machinery Company, LLC" style={{ maxWidth: '120px', marginBottom: '1rem' }} />
-            <h1>My Equipment</h1>
-            <p>Manage your equipment listings</p>
+            <h1>Equipment Admin</h1>
+            <p>Manage all equipment listings</p>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as: {email}</p>
           </div>
         </div>
 
         <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link to="/dashboard/equipment/add" className="equipment-link">+ Add Equipment</Link>
-          <Link to="/dashboard/reservations" className="equipment-link">My Reservations</Link>
-          <Link to="/dashboard/reservations/manage" className="equipment-link">Manage Requests</Link>
+          <Link to="/admin/equipment/add" className="equipment-link">+ Add Equipment</Link>
+          <Link to="/admin/reservations" className="equipment-link">Manage Reservations</Link>
         </div>
 
+        {!loading && machinery.some(m => !m.zipCode) && (
+          <div className="info-banner" style={{ marginBottom: '1.5rem' }}>
+            <strong>{machinery.filter(m => !m.zipCode).length}</strong> listing(s) are missing a zip code.{' '}
+            <button
+              className="approve-button"
+              onClick={handleBackfillZipCode}
+              disabled={migrating}
+              style={{ marginLeft: '0.75rem' }}
+            >
+              {migrating ? 'Updating...' : 'Set all to 58046'}
+            </button>
+          </div>
+        )}
+
         {loading ? (
-          <p>Loading your equipment...</p>
+          <p>Loading equipment...</p>
         ) : machinery.length === 0 ? (
           <div className="no-equipment">
-            <p>You haven't listed any equipment yet. Use the button above to add your first item.</p>
+            <p>No equipment in the catalog yet. Use the button above to add your first item.</p>
           </div>
         ) : (
           <div className="admin-equipment-table-wrapper">
@@ -126,6 +202,7 @@ function DashboardPage() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Owner</th>
                   <th>Category</th>
                   <th>Daily Rate</th>
                   <th>Weekly Rate</th>
@@ -147,6 +224,7 @@ function DashboardPage() {
                         </div>
                       )}
                     </td>
+                    <td>{item.ownerEmail || '—'}</td>
                     <td>{item.category || '—'}</td>
                     <td>{item.pricePerDay ? `$${Math.round(item.pricePerDay * 100) / 100}` : '—'}</td>
                     <td>{item.pricePerWeek ? `$${Math.round(item.pricePerWeek * 100) / 100}` : '—'}</td>
@@ -157,7 +235,25 @@ function DashboardPage() {
                       </span>
                     </td>
                     <td className="action-buttons">
-                      <Link to={`/dashboard/equipment/edit/${item.id}`} className="edit-button">
+                      {item.listingStatus !== 'APPROVED' && (
+                        <button
+                          className="approve-button"
+                          onClick={() => handleStatusChange(item.id, 'APPROVED')}
+                          disabled={updatingId === item.id}
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {item.listingStatus !== 'REJECTED' && (
+                        <button
+                          className="reject-button"
+                          onClick={() => handleStatusChange(item.id, 'REJECTED')}
+                          disabled={updatingId === item.id}
+                        >
+                          Reject
+                        </button>
+                      )}
+                      <Link to={`/admin/equipment/edit/${item.id}`} className="edit-button">
                         Edit
                       </Link>
                       <button
@@ -167,45 +263,6 @@ function DashboardPage() {
                       >
                         {deletingId === item.id ? '...' : 'Delete'}
                       </button>
-                      {item.images && item.images.filter(Boolean).length > 0 && (
-                        <button
-                          className="image-download-btn"
-                          onClick={async () => {
-                            const imgs = item.images!.filter((img): img is string => !!img);
-                            for (const key of imgs) {
-                              const url = await resolveImageUrl(key);
-                              const parts = key.split('/');
-                              const filename = parts[parts.length - 1] || 'equipment-image.jpg';
-                              await downloadImage(url, filename);
-                            }
-                          }}
-                        >
-                          Download Images
-                        </button>
-                      )}
-                      {item.listingStatus === 'APPROVED' && (
-                        <button
-                          className="share-facebook-button"
-                          onClick={async () => {
-                            const url = `https://colgatecompanies.com/equipment/${item.id}`;
-                            const prices: string[] = [];
-                            if (item.pricePerDay) prices.push(`$${Math.round(item.pricePerDay * 100) / 100}/day`);
-                            if (item.pricePerWeek) prices.push(`$${Math.round(item.pricePerWeek * 100) / 100}/week`);
-                            if (item.pricePerAcre) prices.push(`$${Math.round(item.pricePerAcre * 100) / 100}/ac`);
-                            const priceStr = prices.length > 0 ? ` (${prices.join(', ')})` : '';
-                            const text = `${item.name}${priceStr}\n\n${item.description || ''}\n\nView details & check availability:\n${url}`;
-                            try {
-                              await navigator.clipboard.writeText(text);
-                              alert('Listing details copied to clipboard! Facebook Marketplace will open — paste the details into your listing description.');
-                            } catch {
-                              prompt('Copy this text for your Marketplace listing:', text);
-                            }
-                            window.open('https://www.facebook.com/marketplace/create/item/', '_blank');
-                          }}
-                        >
-                          Share
-                        </button>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -220,4 +277,4 @@ function DashboardPage() {
   );
 }
 
-export default DashboardPage;
+export default AdminEquipmentListPage;
