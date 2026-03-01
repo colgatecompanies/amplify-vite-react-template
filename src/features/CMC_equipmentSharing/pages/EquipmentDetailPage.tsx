@@ -51,8 +51,8 @@ function EquipmentDetailPage() {
     if (machinery.pricePerWeek) prices.push(`$${Math.round(machinery.pricePerWeek * 100) / 100}/week`);
     if (machinery.pricePerAcre) prices.push(`$${Math.round(machinery.pricePerAcre * 100) / 100}/ac`);
     const priceStr = prices.length > 0 ? ` - ${prices.join(', ')}` : '';
-    const title = `${machinery.name}${priceStr} | Colgate Machinery Company`;
-    const desc = machinery.description || `Rent ${machinery.name} from Colgate Machinery Company.`;
+    const title = `${machinery.name}${priceStr} | DertWerk`;
+    const desc = machinery.description || `Rent ${machinery.name} from DertWerk.`;
     document.title = title;
     const setMeta = (property: string, content: string) => {
       let el = document.querySelector(`meta[property="${property}"]`);
@@ -67,9 +67,9 @@ function EquipmentDetailPage() {
     };
     setMeta('og:title', title);
     setMeta('og:description', desc);
-    setMeta('og:url', `https://colgatecompanies.com/equipment/${machinery.id}`);
+    setMeta('og:url', `https://dertwerk.com/equipment/${machinery.id}`);
     return () => {
-      document.title = 'Colgate Machinery Company - Equipment Rental';
+      document.title = 'DertWerk - Equipment Rental';
     };
   }, [machinery]);
 

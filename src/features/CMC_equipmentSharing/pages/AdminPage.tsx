@@ -118,7 +118,7 @@ function AdminPage() {
       <div className="admin-content">
         <div className="admin-header">
           <div style={{ textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
-            <img src="/images/home/cmc-logo.png" alt="Colgate Machinery Company, LLC" style={{ maxWidth: '120px', marginBottom: '1rem' }} />
+            <Link to="/"><img src="/images/home/DertWerk Logo.png" alt="DertWerk" style={{ maxWidth: '120px', marginBottom: '1rem', display: 'block', margin: '0 auto 1rem' }} /></Link>
             <h1>Add Equipment</h1>
             <p>{userIsAdmin ? 'Add new equipment to the rental catalog' : 'Submit equipment for listing'}</p>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as: {email}</p>
