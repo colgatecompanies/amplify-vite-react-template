@@ -29,7 +29,7 @@ function CMCPage() {
       }}
     >
       <div className="page-content">
-        <img src="/images/home/DertWerk Logo.png" alt="DertWerk" style={{ maxWidth: '200px', marginBottom: '1rem' }} />
+        <img src="/images/home/DertWerk Logo Transparent.png" alt="DertWerk" style={{ maxWidth: '200px', marginBottom: '1rem' }} />
         <p>Contact us for more information on machinery pooling and custom farming operations.</p>
 
         <Link to="/equipment" className="equipment-link">View Available Equipment →</Link>

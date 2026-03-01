@@ -163,7 +163,7 @@ function AdminEquipmentEditPage() {
       <div className="admin-content">
         <div className="admin-header">
           <div style={{ textAlign: 'center', width: '100%', marginBottom: '1rem' }}>
-            <Link to="/"><img src="/images/home/DertWerk Logo.png" alt="DertWerk" style={{ maxWidth: '120px', marginBottom: '1rem', display: 'block', margin: '0 auto 1rem' }} /></Link>
+            <Link to="/"><img src="/images/home/DertWerk Logo Transparent.png" alt="DertWerk" style={{ maxWidth: '120px', marginBottom: '1rem', display: 'block', margin: '0 auto 1rem' }} /></Link>
             <h1>Edit Equipment</h1>
             <p>Update equipment details</p>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>Logged in as: {email}</p>

@@ -139,7 +139,7 @@ function EquipmentPage() {
     <main className="page-container container">
       <div className="equipment-content">
         <div className="equipment-header">
-          <Link to="/"><img src="/images/home/DertWerk Logo.png" alt="DertWerk" style={{ maxWidth: '150px', marginBottom: '1rem', display: 'block' }} /></Link>
+          <Link to="/"><img src="/images/home/DertWerk Logo Transparent.png" alt="DertWerk" style={{ maxWidth: '150px', marginBottom: '1rem', display: 'block' }} /></Link>
           <h1>Equipment Rental</h1>
           <p>Browse our available machinery for rent</p>
           <Link to="/dashboard" className="equipment-link">List, Manage or Reserve Equipment</Link>
