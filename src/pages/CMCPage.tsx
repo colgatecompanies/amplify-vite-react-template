@@ -30,9 +30,9 @@ function CMCPage() {
     >
       <div className="page-content">
         <img src="/images/home/DertWerk Logo Transparent.png" alt="DertWerk" style={{ maxWidth: '200px', marginBottom: '1rem' }} />
-        <p>Contact us for more information on machinery pooling and custom farming operations.</p>
+        <p>DertWerk is under development as of early 2026. Please check back regularly, as we will be adding a variety of services to the site over time.</p>
 
-        <Link to="/equipment" className="equipment-link">View Available Equipment →</Link>
+        <Link to="/equipment" className="equipment-link">B2B Equipment Rental →</Link>
       </div>
     </main>
   );
